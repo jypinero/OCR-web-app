@@ -11,6 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear'])) {
     $extractedTexts = [];
     $_SESSION['extractedTexts'] = [];
     $error = '';
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit;
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_FILES['images']) && isset($_FILES['images']['tmp_name']) && is_array($_FILES['images']['tmp_name'])) {
         $imageTmpPaths = $_FILES['images']['tmp_name'];
@@ -66,6 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear'])) {
     } else {
         $error = 'Please upload at least one valid image or PDF file.';
     }
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit;
 }
 ?>
 
