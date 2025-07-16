@@ -1,13 +1,15 @@
 <?php
+session_start();
 require_once __DIR__ . '/vendor/autoload.php';
 
 use thiagoalessio\TesseractOCR\TesseractOCR;
 
-$extractedTexts = [];
+$extractedTexts = isset($_SESSION['extractedTexts']) ? $_SESSION['extractedTexts'] : [];
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear'])) {
     $extractedTexts = [];
+    $_SESSION['extractedTexts'] = [];
     $error = '';
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_FILES['images']) && isset($_FILES['images']['tmp_name']) && is_array($_FILES['images']['tmp_name'])) {
@@ -15,9 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear'])) {
         $fileNames = $_FILES['images']['name'];
         $language = 'eng';
         $fileTypes = array_map('mime_content_type', $imageTmpPaths);
-        $extractedTexts = [];
         $errors = [];
-
+        $newExtractedTexts = [];
         foreach ($imageTmpPaths as $index => $imageTmpPath) {
             $fileType = $fileTypes[$index];
             $fileName = $fileNames[$index];
@@ -45,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear'])) {
                 $ocr->executable('/opt/homebrew/bin/tesseract');
                 $ocr->psm(3);
                 $text = $ocr->run();
-                $extractedTexts[] = [
+                $newExtractedTexts[] = [
                     'filename' => $fileName,
                     'text' => $text
                 ];
@@ -59,6 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear'])) {
         if (!empty($errors)) {
             $error = implode("\n", $errors);
         }
+        // Append new results to session
+        $extractedTexts = array_merge($extractedTexts, $newExtractedTexts);
+        $_SESSION['extractedTexts'] = $extractedTexts;
     } else {
         $error = 'Please upload at least one valid image or PDF file.';
     }
@@ -164,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear'])) {
             </div>
             <?php if (!empty($extractedTexts)): ?>
                 <?php foreach ($extractedTexts as $idx => $result): ?>
-                    <div class="col-12 col-md-6 col-lg-4 mb-4 d-flex align-items-stretch">
+                    <div class="col-12 col-md-6 col-lg-6 mb-4 d-flex align-items-stretch">
                         <div class="card modern-card h-100 w-100">
                             <div class="card-body d-flex flex-column h-100">
                                 <h5 class="card-title modern-label mb-2">Extracted Text: <span class="fw-normal text-secondary"><?php echo htmlspecialchars($result['filename']); ?></span></h5>
